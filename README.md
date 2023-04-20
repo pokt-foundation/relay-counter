@@ -1,27 +1,15 @@
 <div align="center">
     <img src=".github/banner.png" alt="Pocket Network logo" width="600"/>
-    <!-- TODO Rename header -->
-    <h1>Backend Go Repo Template</h1>
-    <big>Template repository for creating a new backend Go repo</big>
+    <h1>Relay Counter</h1>
+    <big>Repo of creating and consulting the relay counts</big>
     <div>
     <br/>
-    <!-- TODO Replace `backend-go-repo-template` with repo name -->
-        <a href="https://github.com/pokt-foundation/backend-go-repo-template/pulse"><img src="https://img.shields.io/github/last-commit/pokt-foundation/backend-go-repo-template.svg"/></a>
-        <a href="https://github.com/pokt-foundation/backend-go-repo-template/pulls"><img src="https://img.shields.io/github/issues-pr/pokt-foundation/backend-go-repo-template.svg"/></a>
-        <a href="https://github.com/pokt-foundation/backend-go-repo-template/issues"><img src="https://img.shields.io/github/issues-closed/pokt-foundation/backend-go-repo-template.svg"/></a>
+        <a href="https://github.com/pokt-foundation/relay-counter/pulse"><img src="https://img.shields.io/github/last-commit/pokt-foundation/relay-counter.svg"/></a>
+        <a href="https://github.com/pokt-foundation/relay-counter/pulls"><img src="https://img.shields.io/github/issues-pr/pokt-foundation/relay-counter.svg"/></a>
+        <a href="https://github.com/pokt-foundation/relay-counter/issues"><img src="https://img.shields.io/github/issues-closed/pokt-foundation/relay-counter.svg"/></a>
     </div>
 </div>
 <br/>
-
-  <!-- TODO Replace this section with a README.md describing the new repo -->
-
-# Instructions For a New Repo
-
-1. Click the `Use this template` button, then click `Create a new repository` to create a new repo with the same file structure as this template.
-2. There are a number of comments marked with `TODO` throughout the repo; go through them all and update as appropriate, then remove the `TODO` comment.
-3. Replace all instances of `backend-go-repo-template` with the name of the new repo.
-4. Update this `README.md`
-5. Profit.
 
   <!-- TODO Update the nelow section with development instructions (leave the pre-commit section in place) -->
 

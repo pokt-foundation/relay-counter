@@ -1,41 +1,119 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"os/signal"
+	"syscall"
+
+	postgresdriver "github.com/pokt-foundation/relay-counter/postgres-driver"
+	"github.com/pokt-foundation/relay-counter/router"
 	"github.com/pokt-foundation/utils-go/environment"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
 )
 
 const (
-	// TODO - declare needed environment variable names here
-	todo1 = "TO_DO_1"
-	todo2 = "TO_DO_2"
+	connectionString = "CONNECTION_STRING"
+	apiKeys          = "API_KEYS"
+	port             = "PORT"
+	debug            = "DEBUG"
+	useSSH           = "USE_SSH"
+	sshHost          = "SSH_HOST"
+	sshPort          = "SSH_PORT"
+	sshUser          = "SSH_USER"
+	sshKeyFilePath   = "SSH_KEY_FILE_PATH"
 
-	todoDefault = 12345
+	defaultPort   = "8080"
+	defaultDebug  = false
+	defaultUseSSH = false
 )
 
 type options struct {
-	// TODO - declare needed environment variable struct fields here
-	todo1 string
-	todo2 int64
+	connectionString string
+	apiKeys          map[string]bool
+	port             string
+	debug            bool
+	useSSH           bool
+	sshHost          string
+	sshPort          string
+	sshUser          string
+	sshKeyFilePath   string
 }
 
 func gatherOptions() options {
 	return options{
-		// TODO - access environnment variables using methods here
-
-		// MustGet<TYPE> funcs will panic if env var not found
-		todo1: environment.MustGetString(todo1),
-
-		// Get<TYPE> funcs will default to the second argument if not found
-		todo2: environment.GetInt64(todo2, todoDefault),
+		connectionString: environment.MustGetString(connectionString),
+		apiKeys:          environment.MustGetStringMap(apiKeys, ","),
+		port:             environment.GetString(port, defaultPort),
+		debug:            environment.GetBool(debug, defaultDebug),
+		useSSH:           environment.GetBool(useSSH, defaultUseSSH),
+		sshHost:          environment.GetString(sshHost, ""),
+		sshPort:          environment.GetString(sshPort, ""),
+		sshUser:          environment.GetString(sshUser, ""),
+		sshKeyFilePath:   environment.GetString(sshKeyFilePath, ""),
 	}
 }
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	options := gatherOptions()
+
 	log := logrus.New()
 	// log as JSON instead of the default ASCII formatter.
 	log.SetFormatter(&logrus.JSONFormatter{})
 
-	// TODO - use environment variables from gatherOptions
-	_ = gatherOptions()
+	if options.debug {
+		log.Level = logrus.DebugLevel
+	}
+
+	var driver *postgresdriver.PostgresDriver
+
+	if options.useSSH {
+		sshKey, err := ioutil.ReadFile(options.sshKeyFilePath)
+		if err != nil {
+			panic(err)
+		}
+		sshKeySigner, err := ssh.ParsePrivateKey(sshKey)
+		if err != nil {
+			panic(err)
+		}
+
+		sshConfig := &ssh.ClientConfig{
+			User: options.sshUser,
+			Auth: []ssh.AuthMethod{
+				ssh.PublicKeys(sshKeySigner),
+			},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		}
+
+		// Connect to the SSH Server
+		sshcon, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", options.sshHost, options.sshPort), sshConfig)
+		if err != nil {
+			panic(err)
+		}
+		defer sshcon.Close()
+
+		driver, err = postgresdriver.NewPostgresDriverWithSSH(options.connectionString, sshcon)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		var err error
+		driver, err = postgresdriver.NewPostgresDriver(options.connectionString)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	router, err := router.NewRouter(driver, options.apiKeys, options.port, log)
+	if err != nil {
+		panic(err)
+	}
+
+	router.RunServer(ctx)
 }

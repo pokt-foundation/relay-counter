@@ -1,4 +1,4 @@
-name: Build & Test
+name: Lint & Test
 
 on:
   pull_request:
@@ -9,34 +9,25 @@ on:
     branches:
       - main
       - staging
+  workflow_dispatch:
 
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.18
-
-      - name: Check out code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
 
       - name: Run Golang ci Action
         uses: golangci/golangci-lint-action@v3
 
-  test:
+  build:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.18
-
-      - name: Check out code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
 
       - name: Set up cache
         uses: actions/cache@v2
@@ -47,6 +38,9 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+
+      - name: Build the Docker test stack
+        run: make test_env_up
 
       - name: Run Unit tests
         run: go test ./...
